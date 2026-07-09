@@ -416,8 +416,8 @@ impl<'d> OtgHost<'d> {
         // Wait for AHB bus to be idle before configuring registers.
         while !r.grstctl().read().ahbidl() {}
 
-        // Configure GCCFG for host mode based on core version.
-        // The register layout varies across DWC2 revisions; use CID to select.
+        // Configure GCCFG for host mode based on core version. The register
+        // layout varies across DWC2 revisions; use CID to select.
         let core_id = r.cid().read().0;
         match core_id {
             0x0000_1000 | 0x0000_1100 | 0x0000_1200 => {
@@ -448,21 +448,31 @@ impl<'d> OtgHost<'d> {
             _ => {} // Unknown core; rely on HAL-layer configuration.
         }
 
+        // Select the internal FS PHY and set the turnaround time.
         r.gusbcfg().modify(|w| {
-            // Force host mode
-            w.set_fhmod(true);
-            w.set_fdmod(false);
-            // Enable internal full-speed PHY
             w.set_physel(phy_type.internal() && !phy_type.high_speed());
+            // USB turnaround time for a full-speed host at AHB >= 32 MHz. The
+            // host path never set TRDT, leaving it at the reset default.
+            if phy_type.internal() && !phy_type.high_speed() {
+                w.set_trdt(6);
+            }
         });
 
-        // Wait for host mode to take effect (~25ms).
-        // Poll cmod bit with async yield between attempts.
-        for _ in 0..50u32 {
+        // Force host mode following ST's USB_SetCurrentMode exactly: clear both
+        // mode bits, set FHMOD, then poll GINTSTS.CMOD until the core actually
+        // reports host mode. The mode switch needs >= 25 ms; ST waits up to
+        // ~200 ms. Setting FHMOD in one shot with a short wait leaves the core
+        // in device mode (CMOD stays 0), so no downstream device is detected.
+        r.gusbcfg().modify(|w| {
+            w.set_fhmod(false);
+            w.set_fdmod(false);
+        });
+        r.gusbcfg().modify(|w| w.set_fhmod(true));
+        for _ in 0..40u32 {
+            embassy_time::Timer::after_millis(10).await;
             if r.gintsts().read().cmod() {
                 break;
             }
-            embassy_time::Timer::after_millis(1).await;
         }
     }
 
@@ -478,43 +488,10 @@ impl<'d> OtgHost<'d> {
             w.set_fslspcs(if self.instance.phy_type.high_speed() { 0 } else { 1 });
         });
 
-        // Configure FIFO sizes for host mode:
-        // RX FIFO: half of total
-        // Non-periodic TX FIFO: quarter
-        // Periodic TX FIFO: quarter
-        let total = self.instance.fifo_depth_words;
-        let rx_size = total / 2;
-        let nptx_size = total / 4;
-        let ptx_size = total - rx_size - nptx_size;
-
-        critical_section::with(|_| {
-            r.grxfsiz().modify(|w| w.set_rxfd(rx_size));
-
-            // Non-periodic TX FIFO (used for control and bulk OUT)
-            r.hnptxfsiz().write(|w| {
-                w.set_sa(rx_size);
-                w.set_fd(nptx_size);
-            });
-
-            // Periodic TX FIFO (used for interrupt and isochronous)
-            r.hptxfsiz().write(|w| {
-                w.set_sa(rx_size + nptx_size);
-                w.set_fd(ptx_size);
-            });
-
-            // Flush all FIFOs
-            r.grstctl().write(|w| {
-                w.set_rxfflsh(true);
-                w.set_txfflsh(true);
-                w.set_txfnum(0x10); // Flush all TX FIFOs
-            });
-        });
-
-        // Wait for flush to complete
-        while {
-            let x = r.grstctl().read();
-            x.rxfflsh() || x.txfflsh()
-        } {}
+        // Configure the host FIFO layout. NOTE: on the OTG_HS core these writes
+        // are silently dropped until the port is enabled with a device attached,
+        // so they are re-applied in configure_fsls_phy_clock_after_enable().
+        self.apply_host_fifo_layout();
 
         // Power the port
         let safe_val = hprt_read_safe(r);
@@ -539,6 +516,163 @@ impl<'d> OtgHost<'d> {
         r.gahbcfg().write(|w| {
             w.set_gint(true);
         });
+    }
+
+    /// Program the host FIFO layout (RX / non-periodic TX / periodic TX) and
+    /// flush all FIFOs. Split out of init_host so it can be re-applied at
+    /// port-enable time, where the OTG_HS core finally latches these writes.
+    fn apply_host_fifo_layout(&self) {
+        let r = self.instance.regs;
+
+        let total = self.instance.fifo_depth_words;
+        let rx_size = total / 2;
+        let nptx_size = total / 4;
+        let ptx_size = total - rx_size - nptx_size;
+
+        critical_section::with(|_| {
+            r.grxfsiz().modify(|w| w.set_rxfd(rx_size));
+
+            // Non-periodic TX FIFO (used for control and bulk OUT)
+            r.hnptxfsiz().write(|w| {
+                w.set_sa(rx_size);
+                w.set_fd(nptx_size);
+            });
+
+            // Periodic TX FIFO (used for interrupt and isochronous)
+            r.hptxfsiz().write(|w| {
+                w.set_sa(rx_size + nptx_size);
+                w.set_fd(ptx_size);
+            });
+        });
+
+        // ST HAL waits for AHB idle before every FIFO flush. Issuing the flush
+        // while the AHB is busy can leave RXFFLSH/TXFFLSH stuck set forever.
+        // Bound the wait like ST's count timeout so a misbehaving core cannot
+        // wedge the executor.
+        {
+            let mut count = 0u32;
+            while !r.grstctl().read().ahbidl() {
+                count += 1;
+                if count > 200_000 {
+                    break;
+                }
+            }
+        }
+
+        // Flush all FIFOs.
+        critical_section::with(|_| {
+            r.grstctl().write(|w| {
+                w.set_rxfflsh(true);
+                w.set_txfflsh(true);
+                w.set_txfnum(0x10); // Flush all TX FIFOs
+            });
+        });
+
+        // Wait for flush to complete, bounded like ST's count timeout.
+        let mut count = 0u32;
+        while {
+            let x = r.grstctl().read();
+            x.rxfflsh() || x.txfflsh()
+        } {
+            count += 1;
+            if count > 200_000 {
+                break;
+            }
+        }
+    }
+
+    fn fslspcs_for_speed(&self, speed: Speed) -> u8 {
+        match speed {
+            Speed::High => 0,
+            Speed::Full | Speed::Low => {
+                if self.instance.phy_type.high_speed() {
+                    0
+                } else {
+                    1
+                }
+            }
+        }
+    }
+
+    fn device_speed(&self) -> Speed {
+        let speed_code = self.instance.state.fields.port_speed.load(Ordering::Acquire);
+        match speed_code {
+            0 => Speed::Full,
+            1 => Speed::Low,
+            2 => Speed::High,
+            _ => Speed::Full,
+        }
+    }
+
+    fn wake_channels_disconnected(&self) {
+        for ch in self.instance.state.channels {
+            if ch.allocated.load(Ordering::Relaxed) {
+                ch.result.fetch_or(EV_DISCONNECT, Ordering::Release);
+                ch.waker.wake();
+            }
+        }
+    }
+
+    async fn wait_for_port_enabled(&self) -> u8 {
+        poll_fn(|cx| {
+            let state = self.instance.state;
+            state.fields.port_waker.register(cx.waker());
+
+            let ev = state.fields.port_event.load(Ordering::Acquire);
+            if ev & PORT_EVENT_OVERCURRENT != 0 {
+                state
+                    .fields
+                    .port_event
+                    .fetch_and(!PORT_EVENT_OVERCURRENT, Ordering::AcqRel);
+                return Poll::Ready(PORT_EVENT_OVERCURRENT);
+            }
+            if ev & PORT_EVENT_DISCONNECTED != 0 {
+                state
+                    .fields
+                    .port_event
+                    .fetch_and(!PORT_EVENT_DISCONNECTED, Ordering::AcqRel);
+                self.wake_channels_disconnected();
+                return Poll::Ready(PORT_EVENT_DISCONNECTED);
+            }
+            if ev & PORT_EVENT_ENABLED != 0 {
+                state.fields.port_event.fetch_and(!PORT_EVENT_ENABLED, Ordering::AcqRel);
+                return Poll::Ready(PORT_EVENT_ENABLED);
+            }
+            Poll::Pending
+        })
+        .await
+    }
+
+    /// Latch the post-enable host configuration.
+    ///
+    /// On the OTG_HS core the HCFG.FSLSPCS, FIFO-layout and HFIR writes issued
+    /// in init_host are silently dropped until the port is enabled with a
+    /// device attached. Re-apply them here, exactly mirroring ST HAL's
+    /// port-enable handler. ST does NOT reset the port again afterwards.
+    fn configure_fsls_phy_clock_after_enable(&mut self, speed: Speed) -> DeviceEvent {
+        let r = self.instance.regs;
+        let expected = self.fslspcs_for_speed(speed);
+
+        // Select the FS/LS PHY clock (now that the write sticks).
+        r.hcfg().modify(|w| w.set_fslspcs(expected));
+
+        // Re-apply the host FIFO layout (the init-time write was dropped).
+        self.apply_host_fifo_layout();
+
+        // Program the frame interval for the detected speed. On the OTG_HS core
+        // the FS frame timer runs at the 60 MHz-equivalent rate even with the
+        // 48 MHz FS PHY selected, so ST programs HFIR=60000 for FS (6000 for
+        // LS); the OTG_FS core uses 48000 for FS.
+        let is_hs_core = r.hwcfg2().read().hs_phy_type() != 0;
+        match speed {
+            Speed::Low => r.hfir().write(|w| w.set_frivl(6_000)),
+            Speed::Full => r
+                .hfir()
+                .write(|w| w.set_frivl(if is_hs_core { 60_000 } else { 48_000 })),
+            Speed::High => {} // Keep HS defaults
+        }
+
+        DeviceEvent::Connected(speed)
     }
 }
 
@@ -643,12 +777,7 @@ impl<'d> UsbHostController<'d> for OtgHost<'d> {
                         .port_event
                         .fetch_and(!PORT_EVENT_DISCONNECTED, Ordering::AcqRel);
                     // Wake all channels to signal disconnection
-                    for ch in state.channels {
-                        if ch.allocated.load(Ordering::Relaxed) {
-                            ch.result.fetch_or(EV_DISCONNECT, Ordering::Release);
-                            ch.waker.wake();
-                        }
-                    }
+                    self.wake_channels_disconnected();
 
                     return Poll::Ready(PORT_EVENT_DISCONNECTED);
                 }
@@ -666,71 +795,23 @@ impl<'d> UsbHostController<'d> for OtgHost<'d> {
             if event == PORT_EVENT_DISCONNECTED {
                 return DeviceEvent::Disconnected;
             }
+            if event == PORT_EVENT_OVERCURRENT {
+                return DeviceEvent::Overcurrent;
+            }
 
             // Connected: perform bus reset.
             self.bus_reset().await;
 
             // Now wait for ENABLED or DISCONNECTED.
-            let enabled_event = poll_fn(|cx| {
-                let state = self.instance.state;
-                state.fields.port_waker.register(cx.waker());
-
-                let ev = state.fields.port_event.load(Ordering::Acquire);
-                if ev & PORT_EVENT_OVERCURRENT != 0 {
-                    state
-                        .fields
-                        .port_event
-                        .fetch_and(!PORT_EVENT_OVERCURRENT, Ordering::AcqRel);
-                    return Poll::Ready(PORT_EVENT_OVERCURRENT);
-                }
-                if ev & PORT_EVENT_DISCONNECTED != 0 {
-                    state
-                        .fields
-                        .port_event
-                        .fetch_and(!PORT_EVENT_DISCONNECTED, Ordering::AcqRel);
-                    for ch in state.channels {
-                        if ch.allocated.load(Ordering::Relaxed) {
-                            ch.result.fetch_or(EV_DISCONNECT, Ordering::Release);
-                            ch.waker.wake();
-                        }
-                    }
-                    return Poll::Ready(PORT_EVENT_DISCONNECTED);
-                }
-                if ev & PORT_EVENT_ENABLED != 0 {
-                    state.fields.port_event.fetch_and(!PORT_EVENT_ENABLED, Ordering::AcqRel);
-                    return Poll::Ready(PORT_EVENT_ENABLED);
-                }
-                Poll::Pending
-            })
-            .await;
+            let enabled_event = self.wait_for_port_enabled().await;
 
             match enabled_event {
                 PORT_EVENT_ENABLED => {
-                    let speed_code = self.instance.state.fields.port_speed.load(Ordering::Acquire);
-                    let speed = match speed_code {
-                        0 => Speed::Full,
-                        1 => Speed::Low,
-                        2 => Speed::High,
-                        _ => Speed::Full,
-                    };
+                    let speed = self.device_speed();
 
-                    // Program the frame interval for the detected device speed.
-                    // The PHY clock rate determines the HFIR value:
-                    //   Internal HS PHY (UTMI): 60 MHz → HFIR = 60000 for FS
-                    //   Internal FS PHY:        48 MHz → HFIR = 48000 for FS
-                    let r = self.instance.regs;
-                    let phy_type = self.instance.phy_type;
-                    match speed {
-                        Speed::Full | Speed::Low => {
-                            // Both FS and LS use 1 ms frame intervals.
-                            // PHY clock: HS PHY = 60 MHz, FS PHY = 48 MHz.
-                            let frivl = if phy_type.high_speed() { 60_000 } else { 48_000 };
-                            r.hfir().write(|w| w.set_frivl(frivl));
-                        }
-                        Speed::High => {} // Keep HS defaults
-                    }
-
-                    return DeviceEvent::Connected(speed);
+                    // Latch the post-enable host config (FSLSPCS, FIFO layout,
+                    // HFIR). No second port reset — matches ST's port-enable path.
+                    return self.configure_fsls_phy_clock_after_enable(speed);
                 }
                 PORT_EVENT_OVERCURRENT => {
                     return DeviceEvent::Overcurrent;
