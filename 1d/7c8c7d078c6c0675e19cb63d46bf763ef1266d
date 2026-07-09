@@ -1,0 +1,19 @@
+embassy-stm32/src/usb/otg.rs
+  s_00a8bc93ac04c8::t_006677120de938 726-741
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "1d7c8c7d078c6c0675e19cb63d46bf763ef1266d",
+  "prompts": {},
+  "sessions": {
+    "s_00a8bc93ac04c8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "032acfc6-3a86-49cf-b7f4-67443720a4b7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
