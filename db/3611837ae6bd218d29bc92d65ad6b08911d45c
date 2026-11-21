@@ -1,0 +1,53 @@
+embassy-usb/src/class/hid/device.rs
+  s_601751f99d514f::t_e42575dd3630b8 14
+  s_601751f99d514f::t_7a564e2500a2b9 534-541
+  s_601751f99d514f::t_e51fdb2a94c744 59-61
+  s_601751f99d514f::t_824113375029c8 100,109
+  s_601751f99d514f::t_fdfd4bb1c28fd0 600,606-628
+  s_601751f99d514f::t_853858998a8451 129-130
+  s_601751f99d514f::t_489825ab770c92 400-401,410-411,419-420
+  s_601751f99d514f::t_e5493a7e988493 587
+  s_601751f99d514f::t_cadecf24803c5f 629
+embassy-usb/CHANGELOG.md
+  s_601751f99d514f::t_90d6b1459f468e 11
+examples/nrf52840/src/bin/usb_hid_keyboard.rs
+  s_601751f99d514f::t_bd10d85b1c47a4 87
+examples/nrf52840/src/bin/usb_hid_mouse.rs
+  s_601751f99d514f::t_f1a4c29e1abab7 77
+examples/nrf54lm20/src/bin/usb_hid_keyboard.rs
+  s_601751f99d514f::t_838315dc5dc4b2 82
+examples/nrf54lm20/src/bin/usb_hid_mouse.rs
+  s_601751f99d514f::t_2c7f3385036ae7 77
+examples/rp/src/bin/usb_hid_keyboard.rs
+  s_601751f99d514f::t_ef8df636b6127c 76
+examples/rp/src/bin/usb_hid_mouse.rs
+  s_601751f99d514f::t_aecb4388581390 77
+examples/rp235x/src/bin/usb_hid_keyboard.rs
+  s_601751f99d514f::t_50076c09898d3c 76
+examples/stm32f4/src/bin/usb_hid_keyboard.rs
+  s_601751f99d514f::t_1bde0913edf86d 114
+examples/stm32f4/src/bin/usb_hid_mouse.rs
+  s_601751f99d514f::t_0bc2ad927407ac 105
+examples/stm32l5/src/bin/usb_hid_mouse.rs
+  s_601751f99d514f::t_27d156d484fd77 87
+examples/stm32wba6/src/bin/usb_hid_composite.rs
+  s_601751f99d514f::t_ce8836546c1745 94
+examples/stm32wba6/src/bin/usb_hid_gamepad.rs
+  s_601751f99d514f::t_44f31644009eaf 88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "db3611837ae6bd218d29bc92d65ad6b08911d45c",
+  "prompts": {},
+  "sessions": {
+    "s_601751f99d514f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fd1328e5-0a95-41ad-a68a-ec3fc71a482f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
