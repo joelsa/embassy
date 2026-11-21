@@ -1,0 +1,33 @@
+embassy-nrf/CHANGELOG.md
+  s_44980427e59201::t_65de1b0bb73d5b 11
+embassy-nrf/src/chips/nrf54lm20_app.rs
+  s_44980427e59201::t_65de1b0bb73d5b 897-898
+embassy-nrf/src/lib.rs
+  s_44980427e59201::t_65de1b0bb73d5b 33,63
+embassy-hal-internal/src/interrupt.rs
+  s_44980427e59201::t_65de1b0bb73d5b 12,102,107,109
+examples/nrf54l15-flpr/Cargo.toml
+  s_44980427e59201::t_65de1b0bb73d5b 9
+embassy-net-nrf91/Cargo.toml
+  s_44980427e59201::t_65de1b0bb73d5b 26
+embassy-hal-internal/CHANGELOG.md
+  s_44980427e59201::t_65de1b0bb73d5b 11
+embassy-nrf/Cargo.toml
+  s_44980427e59201::t_65de1b0bb73d5b 34,42,267-269,297,359
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1f0f90020e68efbda70d3eb1c68c43432660c5ad",
+  "prompts": {},
+  "sessions": {
+    "s_44980427e59201": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c05140bf-fc28-4100-83ff-6d993056e840",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
