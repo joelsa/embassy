@@ -1,0 +1,34 @@
+examples/rp235x/src/bin/usb_to_uart.rs
+  s_cc68ee2da0fdd5::t_01252c5b337062 117-121
+embassy-usb/CHANGELOG.md
+  s_cc68ee2da0fdd5::t_259f26b4a8bc16 12
+embassy-usb/src/class/cdc_acm/device.rs
+  s_cc68ee2da0fdd5::t_a467e8dacb6d02 150
+  s_cc68ee2da0fdd5::t_3887c612cfffb4 178
+  s_cc68ee2da0fdd5::t_1107d2539941df 669-689,695-717,721-729,747-749,752-754
+  s_cc68ee2da0fdd5::t_94d42f70949ee7 743-746
+  s_cc68ee2da0fdd5::t_d2cb30d910e79d 609-611,613
+  s_cc68ee2da0fdd5::t_0ffcbabd5fa7bd 330-332,334,447-449,451,531-533,535
+  s_cc68ee2da0fdd5::t_5dd53ab2d4db52 131
+  s_cc68ee2da0fdd5::t_2c1ed54cc6331d 333,425,450,534,612
+  s_cc68ee2da0fdd5::t_6c5ff0577577aa 239
+  s_cc68ee2da0fdd5::t_7cd96a2fa3c653 423-424,426
+  s_cc68ee2da0fdd5::t_761fb5e51ebfd1 690-694,718-720,730-742,750-751
+  s_cc68ee2da0fdd5::t_902bc80ccd20dc 202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "23b6c9de3a1d33d7fb5d849c46a506ba772c07bb",
+  "prompts": {},
+  "sessions": {
+    "s_cc68ee2da0fdd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90a67837-e8cb-4441-b48b-072bb2f8f12e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
