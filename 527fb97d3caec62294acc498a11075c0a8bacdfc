@@ -1,0 +1,19 @@
+embassy-usb-synopsys-otg/src/host.rs
+  s_00a8bc93ac04c8::t_35ffa50f0d1747 419-420,451,454-458,461-472,491-526,546-560,562-563,571-572,576-582,584-595,597-605,607-614,616-675,780,798-800,806,810,812-814
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "527fb97d3caec62294acc498a11075c0a8bacdfc",
+  "prompts": {},
+  "sessions": {
+    "s_00a8bc93ac04c8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "032acfc6-3a86-49cf-b7f4-67443720a4b7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
