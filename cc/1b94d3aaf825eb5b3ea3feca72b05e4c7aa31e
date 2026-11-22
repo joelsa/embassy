@@ -1,0 +1,49 @@
+embassy-usb/src/class/cdc_acm/mod.rs
+  s_cc68ee2da0fdd5::t_26a502237a132f 25-26
+embassy-usb/src/class/cdc_acm/device.rs
+  s_cc68ee2da0fdd5::t_660b4548d2513a 217,219-223,227-236,242
+  s_cc68ee2da0fdd5::t_aec92b5a4fa913 13
+  s_cc68ee2da0fdd5::t_417ab5d235e222 68-69,71-73,424,427-429,518,521-523
+  s_cc68ee2da0fdd5::t_4cdbad3f32e0ed 70
+  s_cc68ee2da0fdd5::t_34f7284394954d 103
+  s_cc68ee2da0fdd5::t_fe9173ce92801c 190,196-197
+  s_cc68ee2da0fdd5::t_a8153df83b151a 517,524,526-528
+  s_cc68ee2da0fdd5::t_c89c6451ee3f20 425,432-435
+  s_cc68ee2da0fdd5::t_4a13bdffb2a056 772,774-778,863,867-868,870-877,879-890,898,910,925,927,930,941-942,952-954,961,969,971-981,983-984
+  s_cc68ee2da0fdd5::t_4440357cd11baa 430
+  s_cc68ee2da0fdd5::t_6302974c1eaba7 26,28,78,94,98-99,109,218,519,869,878
+  s_cc68ee2da0fdd5::t_fc85a572e82202 357-358
+  s_cc68ee2da0fdd5::t_037d1561f61d8b 471
+  s_cc68ee2da0fdd5::t_49248492df58ee 27,29-30
+  s_cc68ee2da0fdd5::t_10b03f6295d1e5 100-101,426,431,520,525
+  s_cc68ee2da0fdd5::t_7fb4570d7471dc 116,198,769-771,773,779,781-792,864-866,891-897,899-909,911-924,926,928-929,931-940,943-951,955-960,962-968,990-997
+  s_cc68ee2da0fdd5::t_23b33fae29fb94 286-301
+  s_cc68ee2da0fdd5::t_2621432cb86250 74,83,95-97,102,104-108,110
+  s_cc68ee2da0fdd5::t_ce8533a7ea7e1f 111-115
+  s_cc68ee2da0fdd5::t_a6e7ad08d87771 163,172
+  s_cc68ee2da0fdd5::t_505cc14d9071b2 970,982,985-989
+  s_cc68ee2da0fdd5::t_61936bedfb196c 385
+  s_cc68ee2da0fdd5::t_c1926c26df6c97 117
+  s_cc68ee2da0fdd5::t_586e35a5b89302 199
+embassy-usb/CHANGELOG.md
+  s_cc68ee2da0fdd5::t_105a888c41b5fb 95
+embassy-usb/src/device/tests.rs
+  s_cc68ee2da0fdd5::t_6302974c1eaba7 1058,1061,1069,1099
+  s_cc68ee2da0fdd5::t_db1116d993e7a9 1036-1057,1059-1060,1062-1068,1070-1098,1100-1102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cc1b94d3aaf825eb5b3ea3feca72b05e4c7aa31e",
+  "prompts": {},
+  "sessions": {
+    "s_cc68ee2da0fdd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90a67837-e8cb-4441-b48b-072bb2f8f12e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
