@@ -25,6 +25,7 @@ embassy-usb/src/class/cdc_acm/device.rs
   s_cc68ee2da0fdd5::t_61936bedfb196c 385
   s_cc68ee2da0fdd5::t_c1926c26df6c97 117
   s_cc68ee2da0fdd5::t_586e35a5b89302 199
+  s_cc68ee2da0fdd5::t_db0ff37977a9eb 816,825,842,850,862
 embassy-usb/CHANGELOG.md
   s_cc68ee2da0fdd5::t_105a888c41b5fb 95
 embassy-usb/src/device/tests.rs
