@@ -21,6 +21,15 @@ use core::task::Poll;
 
 use embassy_hal_internal::{Peri, PeripheralType};
 use embassy_sync::waitqueue::AtomicWaker;
+#[cfg(not(feature = "nrf52832"))]
+pub use pac::uarte::vals::ConfigStop as StopBits;
+#[cfg(any(
+    feature = "nrf52820",
+    feature = "nrf52833",
+    feature = "_nrf5340",
+    feature = "_nrf54l"
+))]
+pub use pac::uarte::vals::Paritytype as ParityType;
 // Re-export SVD variants to allow user to directly set values.
 pub use pac::uarte::vals::{Baudrate, ConfigParity as Parity};
 
@@ -47,6 +56,20 @@ pub struct Config {
     pub parity: Parity,
     /// Baud rate.
     pub baudrate: Baudrate,
+    /// Number of stop bits.
+    #[cfg(not(feature = "nrf52832"))]
+    pub stop_bits: StopBits,
+    /// Even or odd parity, used when `parity` is [`Parity::Included`].
+    #[cfg(any(
+        feature = "nrf52820",
+        feature = "nrf52833",
+        feature = "_nrf5340",
+        feature = "_nrf54l"
+    ))]
+    pub parity_type: ParityType,
+    /// Number of data bits.
+    #[cfg(feature = "_nrf54l")]
+    pub data_bits: DataBits,
 }
 
 impl Default for Config {
@@ -54,6 +77,50 @@ impl Default for Config {
         Self {
             parity: Parity::Excluded,
             baudrate: Baudrate::Baud115200,
+            #[cfg(not(feature = "nrf52832"))]
+            stop_bits: StopBits::One,
+            #[cfg(any(
+                feature = "nrf52820",
+                feature = "nrf52833",
+                feature = "_nrf5340",
+                feature = "_nrf54l"
+            ))]
+            parity_type: ParityType::Even,
+            #[cfg(feature = "_nrf54l")]
+            data_bits: DataBits::Eight,
+        }
+    }
+}
+
+/// Number of data bits in a frame.
+///
+/// 9 data bits are not supported, because the UARTE uses the ninth bit as an address bit.
+#[cfg(feature = "_nrf54l")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[non_exhaustive]
+pub enum DataBits {
+    /// 4 data bits.
+    Four,
+    /// 5 data bits.
+    Five,
+    /// 6 data bits.
+    Six,
+    /// 7 data bits.
+    Seven,
+    /// 8 data bits.
+    Eight,
+}
+
+#[cfg(feature = "_nrf54l")]
+impl DataBits {
+    fn framesize(self) -> vals::Framesize {
+        match self {
+            Self::Four => vals::Framesize::_4bit,
+            Self::Five => vals::Framesize::_5bit,
+            Self::Six => vals::Framesize::_6bit,
+            Self::Seven => vals::Framesize::_7bit,
+            Self::Eight => vals::Framesize::_8bit,
         }
     }
 }
@@ -410,15 +477,28 @@ pub(crate) fn configure_rx_pins(r: pac::uarte::Uarte, mut rxd: Flex<'_>, mut rts
     }
 }
 
+fn config_register(config: Config, hardware_flow_control: bool) -> pac::uarte::regs::UarteConfig {
+    let mut w = pac::uarte::regs::UarteConfig::default();
+    w.set_hwfc(hardware_flow_control);
+    w.set_parity(config.parity);
+    #[cfg(not(feature = "nrf52832"))]
+    w.set_stop(config.stop_bits);
+    #[cfg(any(
+        feature = "nrf52820",
+        feature = "nrf52833",
+        feature = "_nrf5340",
+        feature = "_nrf54l"
+    ))]
+    w.set_paritytype(config.parity_type);
+    #[cfg(feature = "_nrf54l")]
+    w.set_framesize(config.data_bits.framesize());
+    #[cfg(feature = "_nrf54l")]
+    w.set_frametimeout(true);
+    w
+}
+
 pub(crate) fn configure(r: pac::uarte::Uarte, config: Config, hardware_flow_control: bool) {
-    r.config().write(|w| {
-        w.set_hwfc(hardware_flow_control);
-        w.set_parity(config.parity);
-        #[cfg(feature = "_nrf54l")]
-        w.set_framesize(vals::Framesize::_8bit);
-        #[cfg(feature = "_nrf54l")]
-        w.set_frametimeout(true);
-    });
+    r.config().write_value(config_register(config, hardware_flow_control));
     r.baudrate().write(|w| w.set_baudrate(config.baudrate));
 
     // Disable all interrupts
@@ -925,8 +1005,8 @@ impl<'d, M: Mode> UarteRx<'d, M> {
         // BAUDRATE register values are `baudrate * 2^32 / 16000000`
         // source: https://devzone.nordicsemi.com/f/nordic-q-a/391/uart-baudrate-register-values
         //
-        // We want to stop RX if line is idle for 2 bytes worth of time
-        // That is 20 bits (each byte is 1 start bit + 8 data bits + 1 stop bit)
+        // We want to stop RX if line is idle for 20 bits, which is 2 bytes with 1 start bit,
+        // 8 data bits and 1 stop bit each.
         // This gives us the amount of 16M ticks for 20 bits.
         let baudrate = r.baudrate().read().baudrate();
         let timeout = 0x8000_0000 / (baudrate.to_bits() / 40);
@@ -1502,6 +1582,67 @@ mod _embedded_io {
         }
         fn flush(&mut self) -> Result<(), Self::Error> {
             Ok(())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_keeps_the_register_value() {
+        #[cfg(not(feature = "_nrf54l"))]
+        assert_eq!(config_register(Config::default(), true).0, 0x0000_0001);
+        // HWFC, FRAMESIZE 8 and FRAMETIMEOUT.
+        #[cfg(feature = "_nrf54l")]
+        assert_eq!(config_register(Config::default(), true).0, 0x0000_5001);
+        assert!(!config_register(Config::default(), false).hwfc());
+    }
+
+    #[cfg(not(feature = "nrf52832"))]
+    #[test]
+    fn two_stop_bits() {
+        let config = Config {
+            stop_bits: StopBits::Two,
+            ..Default::default()
+        };
+        assert!(config_register(config, false).stop() == StopBits::Two);
+    }
+
+    #[cfg(any(
+        feature = "nrf52820",
+        feature = "nrf52833",
+        feature = "_nrf5340",
+        feature = "_nrf54l"
+    ))]
+    #[test]
+    fn odd_parity() {
+        let config = Config {
+            parity: Parity::Included,
+            parity_type: ParityType::Odd,
+            ..Default::default()
+        };
+        let w = config_register(config, false);
+        assert!(w.parity() == Parity::Included);
+        assert!(w.paritytype() == ParityType::Odd);
+    }
+
+    #[cfg(feature = "_nrf54l")]
+    #[test]
+    fn data_bits() {
+        for (data_bits, framesize) in [
+            (DataBits::Four, vals::Framesize::_4bit),
+            (DataBits::Five, vals::Framesize::_5bit),
+            (DataBits::Six, vals::Framesize::_6bit),
+            (DataBits::Seven, vals::Framesize::_7bit),
+            (DataBits::Eight, vals::Framesize::_8bit),
+        ] {
+            let config = Config {
+                data_bits,
+                ..Default::default()
+            };
+            assert!(config_register(config, false).framesize() == framesize);
         }
     }
 }
