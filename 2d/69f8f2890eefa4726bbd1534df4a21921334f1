@@ -1,0 +1,31 @@
+embassy-nrf/src/buffered_uarte/v1.rs
+  s_cc68ee2da0fdd5::t_fd1618d1480b40 31,639
+embassy-nrf/CHANGELOG.md
+  s_cc68ee2da0fdd5::t_00f8691fd3d175 13
+embassy-nrf/src/uarte.rs
+  s_cc68ee2da0fdd5::t_06c76b144f4762 413,416-417,432-433,446-447
+  s_cc68ee2da0fdd5::t_fbb191f812ff03 428
+  s_cc68ee2da0fdd5::t_87e549c3d37f1c 457
+  s_cc68ee2da0fdd5::t_e2014e43e2a943 445
+  s_cc68ee2da0fdd5::t_90e0912b2b9df7 1537-1541,1546-1547,1551-1553,1557-1561,1563-1565,1567,1573-1575
+  s_cc68ee2da0fdd5::t_264f27bb662067 418-419,422-424,430-431,437-438
+  s_cc68ee2da0fdd5::t_fc782ddaa9ccff 414-415,420-421,425-427,429,434-436,439-444,961,1542-1545,1548-1550,1554-1556,1562,1566,1568-1572
+embassy-nrf/src/buffered_uarte/v2.rs
+  s_cc68ee2da0fdd5::t_fd1618d1480b40 37,491
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2d69f8f2890eefa4726bbd1534df4a21921334f1",
+  "prompts": {},
+  "sessions": {
+    "s_cc68ee2da0fdd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90a67837-e8cb-4441-b48b-072bb2f8f12e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
