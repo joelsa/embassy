@@ -1,0 +1,35 @@
+embassy-nrf/src/buffered_uarte/v2.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 497,571
+  s_cc68ee2da0fdd5::t_f88baf0e76ce18 242-243,245,280,339,379-380,382,398,422
+embassy-nrf/src/chips/nrf54l10_app.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 737
+embassy-nrf/src/chips/nrf54lm20_app.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 816
+embassy-nrf/src/uarte.rs
+  s_cc68ee2da0fdd5::t_f88baf0e76ce18 283,290,309,445,927,929,941
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 181,416-420,424-435,439-441,449-450,453,462,599,952,969,1397-1398,1433,1446-1448,1454-1457,1561,1566-1567,1572-1573,1579,1585-1588,1592-1599
+  s_cc68ee2da0fdd5::t_b39a9b8d084465 1600
+embassy-nrf/src/chips/nrf54l05_app.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 737
+embassy-nrf/src/buffered_uarte/v1.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 645,773
+  s_cc68ee2da0fdd5::t_f88baf0e76ce18 386-387,389,424,483,525-526,528,544,570
+embassy-nrf/src/chips/nrf54l15_app.rs
+  s_cc68ee2da0fdd5::t_1962b3b7a4c430 737
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a3f843ec0ed0af4cfbdba4930c63f9f67c5b62a3",
+  "prompts": {},
+  "sessions": {
+    "s_cc68ee2da0fdd5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "90a67837-e8cb-4441-b48b-072bb2f8f12e",
+        "model": "claude-fable-5-2"
+      },
+      "human_author": "Joël Schulz-Andres <joel@systemscape.de>"
+    }
+  }
+}
